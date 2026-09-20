@@ -22,11 +22,11 @@ async function main() {
         do {
             SuperMenu = await pregunta("Elija una opción: ");
             if (SuperMenu<0 || SuperMenu>3) {
-                console.log("Error: Escoja entre las opciones diponibles");
+                console.log("=====Error: Escoja entre las opciones diponibles=====");
             }
         } while (SuperMenu<0 || SuperMenu>3);
         if (SuperMenu==0) {
-            console.log("\n\t*****\n\t   Ha salido exitosamente\n\t*****");
+            console.log("\n\t*****\n\t\tHa salido exitosamente\n\t*****");
         }
         if (SuperMenu==1) {
             mostrarProductos(productos);
@@ -42,7 +42,7 @@ async function main() {
                 if(nombrePedido.length===0){
                     console.log("=====ERROR: Ingrese un nombre=====");
                 }
-            } while (nombrePedido.length>15||nombrePedido.length<0);
+            } while (nombrePedido.length>15||nombrePedido.length===0);
             listaPedidos[nombrePedido]={productos: [], totalAcumulado: 0};
             mostrarProductos(productos);
             console.log("\n****************************************************************");
@@ -63,7 +63,98 @@ async function main() {
             } while (eleccionProducto!=0);
         }
         if (SuperMenu==3) {
+            let eleccionEdicion;
+            let eleccionPedido;
             mostrarPedidos(listaPedidos);
+            if(Object.keys(listaPedidos).length>0){
+                do {
+                    console.log("\n****************************************************************");
+                    console.log("INSTRUCCIONES:");
+                    console.log("\tSi su respuesta es afirmativa escriba '1'");
+                    console.log("\tSi su respuesta es negativa escriba '2'");
+                    console.log("\tSi desea regresar al menú principal escriba '0'");
+                    console.log("****************************************************************\n");
+                    eleccionEdicion = await pregunta("Desea editar algún pedido?: ");
+                    if (eleccionEdicion<0 || eleccionEdicion>2) {
+                        console.log("=====Error: Escoja entre las opciones diponibles=====");
+                    }
+                } while (eleccionEdicion<0 || eleccionEdicion>2);
+                if (eleccionEdicion!=0) {
+                    mostrarNombresPedidos(Object.keys(listaPedidos));
+                    do {
+                        eleccionPedido = await pregunta("Escriba codigo del pedido a editar: ");
+                        if (eleccionPedido<0 || eleccionPedido>Object.keys(listaPedidos).length) {
+                            console.log("=====ERROR: Escriba un valor válido=====");
+                        }
+                    } while (eleccionPedido<0 || eleccionPedido>Object.keys(listaPedidos).length);
+                    const nombreRealPedido = Object.keys(listaPedidos)[eleccionPedido-1];
+                    console.log("\n******** CONTENIDO DEL PEDIDO ********");
+                    listaPedidos[nombreRealPedido].productos.forEach((producto, indice) => {
+                        console.log(`${indice + 1}. ${producto.producto} - $${producto.precio}`);
+                    });
+                    console.log("Total acumulado: $" + listaPedidos[nombreRealPedido].totalAcumulado);
+                    console.log("****************************************\n");
+                    let opcionEdicion;
+                    do {
+                        console.log("********* MENÚ DE EDICIÓN *********");
+                        console.log("1.- Agregar producto");
+                        console.log("2.- Eliminar producto");
+                        console.log("3.- Ver productos");
+                        console.log("0.- Salir al menú principal\n");
+                        do {
+                            opcionEdicion = await pregunta("Elija una opción: ");
+
+                            if (opcionEdicion<0 || opcionEdicion>3) {
+                                console.log("=====ERROR: Escoja una opción válida=====");
+                            }
+
+                        } while (opcionEdicion<0 || opcionEdicion>3);
+                        if (opcionEdicion==1) {
+                            mostrarProductos(productos);
+                            let nuevoProd;
+                            do {
+
+                                nuevoProd = await pregunta("¿Qué producto desea agregar?: ");
+                                if (nuevoProd<1 || nuevoProd>productos.length) {
+                                    console.log("=====ERROR: Código inválido=====");
+                                }
+                            } while (nuevoProd<1 || nuevoProd>productos.length);
+                            agregarPedido(listaPedidos[nombreRealPedido], productos[nuevoProd-1].producto, productos[nuevoProd-1].precio);
+                            console.log("\nProducto agregado correctamente.");
+                        }
+                        if (opcionEdicion==2) {
+                            console.log("\n******** CONTENIDO DEL PEDIDO ********");
+                            listaPedidos[nombreRealPedido].productos.forEach((producto, indice) => {
+                                console.log(`${indice + 1}. ${producto.producto} - $${producto.precio}`);
+                            });
+                            console.log("Total acumulado: $" + listaPedidos[nombreRealPedido].totalAcumulado);
+                            console.log("****************************************\n");
+                            let posEliminar;
+                            do {
+                                posEliminar = await pregunta("¿Cuál es la posición del producto a eliminar?: ");
+                                if (posEliminar<1 || posEliminar>listaPedidos[nombreRealPedido].productos.length) {
+                                    console.log("=====ERROR: Posición inválida=====");
+                                }
+                            } while (posEliminar<1 || posEliminar>listaPedidos[nombreRealPedido].productos.length);
+                            const precioEliminado = listaPedidos[nombreRealPedido].productos[posEliminar - 1].precio;
+                            listaPedidos[nombreRealPedido].totalAcumulado -= precioEliminado;
+
+                            listaPedidos[nombreRealPedido].productos.splice(posEliminar - 1, 1);
+                            console.log("\nProducto eliminado correctamente.");
+                        }
+
+                        // Opción 4 - Ver productos del pedido
+                        if (opcionEdicion==3) {
+                            console.log("\n******** CONTENIDO DEL PEDIDO ********");
+                            listaPedidos[nombreRealPedido].productos.forEach((producto, indice) => {
+                                console.log(`${indice + 1}. ${producto.producto} - $${producto.precio}`);
+                            });
+                            console.log("Total acumulado: $" + listaPedidos[nombreRealPedido].totalAcumulado);
+                            console.log("****************************************\n");
+                        }
+                    } while (opcionEdicion!=0);
+                }
+            }
         }
     } while (SuperMenu!=0);
 }
@@ -120,6 +211,13 @@ function mostrarPedidos(array){
         console.log("------------------------");
     }
     console.log("***************************");
+}
+function mostrarNombresPedidos(array){
+    console.log("********** LISTA DE PEDIDOS **********")
+    array.forEach((nombres, indice) =>{
+        console.log(`${indice + 1}. ${nombres}`);
+    });
+    console.log("**************************************");
 }
 
 function agregarPedido(pedido, nombre, precio) {
