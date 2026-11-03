@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Cálculo Multivariable</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Proyecto Cálculo Multivariable</h1>
+    <!-- División para el raster-->
+    <div class="divVentana" >
+        <!-- Raster-->
+        <div class="divRaster">
+            <h2>Raster</h2>
+            <div id="contenedor-raster"></div>
+        </div>
+        <!-- Menú-->
+        <div class="divMenu">
+            <!-- Título -->
+            <h2>Menú</h2>
+            <!-- Insertar tamaño del raster -->
+            <div>
+                <label for="raster-tamanio">Tamaño: </label>
+                <input type="number" id="raster-tamanio" value="10">
+                <label for="interpolacion">
+                    <input type="checkbox" id="interpolacion"> Activar Interpolacion
+                </label>
+            </div>
+            <!-- Coordenadas x,y  -->
+            <div>
+                <label for="positionX">Posición en X: </label>
+                <input type="number" id="positionX" >
+                <label for="positionY">Posición en Y: </label>
+                <input type="number" id="positionY" >
+            </div>
+            <!-- Coordenada z -->
+            <label for="positionZ">Posición en Z: </label>
+            <input type="number" id="positionZ">
+            <!-- Botón generador del raster -->
+            <button id="btn-generar">Generar</button>
+            <button id="btn-degradar">Degradar</button>
+            <button id="btn-ordenar">Ordenar</button>
+            <button id="btn-parteaguas">Calcular Parteaguas</button>
+            <!-- Min y maximo del raster -->
+            <label id="maximo">Máximo: </label>
+            <label id="minimo">Mínimo: </label>
+            <!-- Selector de Tipo de Terreno -->
+            <div>
+                <label for="tipo-terreno">Tipo de Terreno: </label>
+                <select id="tipo-terreno">
+                    <option value="random" selected>Random</option>
+                    <option value="mapa1">Mapa 1 (Valle y Crestas)</option>
+                </select>
+            </div>
+            <!-- Tarjeta de colores -->
+            <div id="contenedor-barra"></div>
+            <!-- Selector del buscador -->
+            <div class="seccion-buscador">
+                <h2>Buscador de Z</h2>
+                <label for="selector-modo">Modo de búsqueda: </label>
+                <select id="selector-modo">
+                    <option value="exacto">Valor exacto</option>
+                    <option value="rango">Rango de valores</option>
+                </select>
+                <div id="modo-exacto" class="mostrar">
+                    <label for="z-exacta">Buscar valor z: </label>
+                    <input type="number" id="z-exacta" >
+                </div>
+                <div id="modo-rango" class="mostrar ocultar">
+                    <label for="z-min">Desde: </label>
+                    <input type="number" id="z-min">
+                    <label for="z-max">Hasta: </label>
+                    <input type="number" id="z-max">
+                </div>
+                <button id="btn-restaurar">Restaurar</button>
+            </div>
+        </div>
+    </div>
+    <script src="scripts/script.js"></script>
+</body>
+</html>
