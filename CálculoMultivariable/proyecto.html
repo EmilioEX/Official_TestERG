@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto Cálculo Multivariable</title>
+  <style>
+    #raster {
+      display: grid;
+      grid-template-columns: repeat(10, 40px);
+      gap: 10px;
+    }
+    .celda {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #333;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /*width: 80px;
+        height: 50px;
+        margin: 5px;*/
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        font-family: Arial;
+    }
+    .boton {
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .boton:hover {
+        background-color: #2980b9;
+    }
+    .input {
+        padding: 10px;
+        border: 2px solid #bdc3c7;
+        border-radius: 6px;
+        font-size: 14px;
+        width: 200px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        outline: none;
+        transition: 0.2s;
+    }
+    .input:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+    .select {
+        padding: 10px;
+        border: 2px solid #bdc3c7;
+        border-radius: 6px;
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        background-color: white;
+        outline: none;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+    h1 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        text-align: center;
+        border-bottom: 2px solid #bdc3c7;
+        padding-bottom: 10px;
+    }
+
+
+  </style>
+</head>
+<body style="font-family: Arial;">
+    <div style=" display:flex; flex-direction: row; align-items: center; align-content: center">
+        <!-- Contenedor del Raster-->
+        <div style=" display:flex; flex-direction: column; background-color: aquamarine; width:450px; height: 600px; align-items: center; padding: 30px">
+            <h1>Raster 10x10</h1>
+            <div id="raster"></div>
+            
+        </div>
+        <!-- Contenedor del formulario-->
+        <div style="display: flex; flex-direction: column; background-color: antiquewhite; width: 500px;height: 600px; padding: 30px; gap:20px;">
+            <h1>Menú del Raster</h1>
+            <div>
+                <form>
+                    <input id="celdaIndex" class="input" type="number" placeholder="posicion del 1 al 100">
+                    <button type="button" onclick="cambiarColorManual()" class="boton">Aplicar</button>
+                </form>
+            </div>
+            <div>
+                <form >
+                    <input id="x" class="input" type="number" placeholder="posición en x">
+                    <input id="y" class="input" type="number" placeholder="posición en y">
+                    
+                    <button type="button" onclick="cambiarColorXY()" class="boton">Aplicar</button>
+                </form>
+            </div>
+            <select id="colorSelect" class="select"></select>
+            <button onclick="pintarRaster()" class="boton">Randomizar</button>
+        </div>
+    </div>
+    <script src="proyecto.js"></script>
+</body>
+</html>

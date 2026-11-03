@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Raster HTML</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .menu {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        button {
+            padding: 6px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Contenedor del Raster con tamaño visual fijo */
+        #raster-container {
+            width: 500px;
+            height: 500px;
+            background-color: #e0e0e0;
+            border: 2px solid #333;
+            display: grid;
+            gap: 1px; /* Espacio simula la rejilla entre "píxeles" */
+        }
+
+        /* Estilo base de cada celda/div */
+        .celda {
+            background-color: #ffffff;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .celda:hover {
+            background-color: #e3f2fd;
+        }
+
+        /* Clase de resaltado cuando una celda es seleccionada */
+        .celda.seleccionada {
+            outline: 3px solid #ff4081; /* Usamos outline para no alterar el tamaño del grid */
+            outline-offset: -3px;
+            z-index: 10; /* Asegura que el borde se vea por encima de las demás celdas */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu">
+        <div>
+            <label for="input-tamano">Tamaño (2-100):</label>
+            <input type="number" id="input-tamano" min="2" max="100" value="10">
+        </div>
+        <button id="btn-generar">Generar Raster</button>
+        
+        <div>
+            <label>Selección actual:</label>
+            <input type="text" id="input-coordenadas" readonly placeholder="Ninguna" style="width: 100px;">
+        </div>
+    </div>
+
+    <!-- Aquí se dibujará la cuadrícula -->
+    <div id="raster-container"></div>
+
+    <script>
+        const container = document.getElementById('raster-container');
+        const inputTamano = document.getElementById('input-tamano');
+        const btnGenerar = document.getElementById('btn-generar');
+        const inputCoordenadas = document.getElementById('input-coordenadas');
+
+        // Variable global para recordar cuál es la celda activa actual
+        let celdaSeleccionada = null;
+
+        function generarRaster() {
+            // 1. Obtener y validar el tamaño del input
+            let tamano = parseInt(inputTamano.value);
+            if (isNaN(tamano) || tamano < 2) tamano = 2;
+            if (tamano > 100) tamano = 100;
+            inputTamano.value = tamano; // Sincroniza el input si el usuario puso algo inválido
+
+            // 2. Limpiar el contenedor anterior y reiniciar la selección
+            container.innerHTML = '';
+            celdaSeleccionada = null;
+            inputCoordenadas.value = 'Ninguna';
+
+            // 3. Configurar dinámicamente las filas y columnas en CSS Grid
+            container.style.gridTemplateColumns = `repeat(${tamano}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${tamano}, 1fr)`;
+
+            // 4. Crear el fragmento en memoria para optimizar el rendimiento
+            const fragmento = document.createDocumentFragment();
+
+            // 5. Doble bucle anidado: Y para las filas, X para las columnas
+            for (let y = 0; y < tamano; y++) {
+                for (let x = 0; x < tamano; x++) {
+                    const celda = document.createElement('div');
+                    celda.classList.add('celda');
+                    
+                    // Asignamos las coordenadas espaciales como atributos de datos nativos
+                    celda.dataset.x = x;
+                    celda.dataset.y = y;
+
+                    fragmento.appendChild(celda);
+                }
+            }
+
+            // Inyectamos todas las celdas de un solo golpe al DOM
+            container.appendChild(fragmento);
+        }
+
+        // 6. Delegación de eventos para la selección al hacer clic
+        container.addEventListener('click', (evento) => {
+            // Verificamos que el clic haya sido específicamente en una celda
+            const celdaClickeada = evento.target;
+            if (!celdaClickeada.classList.contains('celda')) return;
+
+            // Si había otra celda seleccionada antes, le quitamos el borde de resalte
+            if (celdaSeleccionada) {
+                celdaSeleccionada.classList.remove('seleccionada');
+            }
+
+            // Marcamos la nueva celda como seleccionada y le añadimos el estilo
+            celdaSeleccionada = celdaClickeada;
+            celdaSeleccionada.classList.add('seleccionada');
+
+            // Leemos los atributos guardados en la celda y actualizamos el menú de texto
+            const x = celdaSeleccionada.dataset.x;
+            const y = celdaSeleccionada.dataset.y;
+            inputCoordenadas.value = `X: ${x}, Y: ${y}`;
+        });
+
+        // Escuchadores de eventos para iniciar el programa
+        btnGenerar.addEventListener('click', generarRaster);
+        
+        // Genera un raster inicial de 10x10 automáticamente al cargar la página
+        generarRaster();
+    </script>
+</body>
+</html>

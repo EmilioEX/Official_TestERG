@@ -1,0 +1,115 @@
+/*Encabezado para la página*/
+html, body{
+    height: 100%;
+}
+h1 {
+    font-family: 'Arial';
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #bdc3c7;
+    padding-bottom: 20px;
+}
+h2 {
+    font-family: 'Arial';
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #bdc3c7;
+    padding-bottom: 20px;
+}
+label{
+    color: white;
+}
+#contenedor-raster {
+    width: 700px;
+    height: 700px;
+    background-color: #e0e0e0;
+    border: 2px solid #333;
+    display: grid;
+    gap: 1px;
+    margin:auto;
+}
+#contenedor-raster.con-interpolacion .celda{
+    transition: background-color 2s ease-in-out;
+}
+#contenedor-barra{
+    background-color: #ff4081;
+    display:grid;
+    grid-template-columns: repeat(10, 1fr);
+    width:700px;
+    height: 70px;
+    margin:auto;
+}
+.divVentana{
+    height: 90%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap:20px;
+    padding :10px;
+}
+.divRaster{
+    display:flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #0a0b50;
+}
+.divMenu{
+    height: 100%;
+    background-color: #2c3e50;
+    align-items: center;
+    justify-content: center;
+}
+.celda {
+    background-color: #ffffff;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+.celda:hover{
+            background-color: #0d0e0f;
+}
+.celda.seleccionada{
+    outline: 3px solid #ff4081; /* Usamos outline para no alterar el tamaño del grid */
+    outline-offset: -3px;
+    z-index: 10; /* Asegura que el borde se vea por encima de las demás celdas */
+}
+.ocultar{
+    display:none !important;
+}
+.mostrar{
+    margin: 15px;
+}
+.busqueda-encontrada{
+    outline: 3px solid #00e5ff;
+
+    outline-offset: -3px;
+    z-index: 5;
+}
+.parteaguas {
+    background-color: #9c27b0 !important; /* Color morado solicitado */
+    outline: 2px solid #ffffff;
+    z-index: 6;
+}
+/* Estilo para los ríos (cauce en rojo) */
+.cauce-rojo {
+    background-color: #ff1744 !important;
+    color: #fff;
+    font-weight: bold;
+    z-index: 4;
+}
+
+/* Estilo para el parteaguas de la cuenca seleccionado (contorno amarillo) */
+.parteaguas-amarillo {
+    outline: 3px solid #ffea00 !important; /* Contorno amarillo brillante */
+    outline-offset: -3px;
+    z-index: 8;
+}
+
+/* Estilo opcional para sombrear el interior de la cuenca seleccionada */
+.celda-cuenca {
+    background-color: rgba(255, 235, 59, 0.25) !important; /* Tono translúcido amarillo */
+}
