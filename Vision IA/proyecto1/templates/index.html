@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <title>Visual IA - Streaming MJPEG</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .div1 {
+            background-color: #222;
+            color: white;
+            width: 70%;
+            margin: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .div2 {
+            background-color: #f4f4f4;
+            width: 30%;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        img.video-stream {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body style="display: flex; flex-direction: column; height: 100%; background-color: #333;">
+
+    <header style="background-color: #111; color: white; display: flex; justify-content: center; align-items: center; height: 70px;">
+        <h2>Detección de Figuras y Color con OpenCV (Tiempo Real)</h2>
+    </header>
+
+    <div style="display: flex; flex-direction: row; flex: 1;">
+
+        <!-- VIDEO PROCESADO EN TIEMPO REAL -->
+        <div class="div1">
+            <h3>Flujo en Vivo con OpenCV</h3>
+            <!-- 🔥 La etiqueta <img> carga el video continuo directamente desde Flask -->
+            <img class="video-stream" src="{{ url_for('video_feed') }}" alt="Cargando video...">
+        </div>
+
+        <!-- PANEL DE INFORMACIÓN -->
+        <div class="div2">
+            <h3>Resultados de Detección</h3>
+            <p><strong>Estado:</strong> Transmitiendo a 30 FPS</p>
+            <p id="respuesta" style="font-size: 1.2em; color: #007bff;">Detectando...</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Consultar únicamente los datos de texto (Forma / Color) cada 200ms
+        function actualizarDatos() {
+            fetch("/obtener_datos")
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById("respuesta").innerText =
+                        `Forma: ${data.forma} | Color: ${data.color}`;
+                })
+                .catch(err => console.error("Error obteniendo datos:", err));
+        }
+
+        setInterval(actualizarDatos, 200);
+    </script>
+</body>
+</html>

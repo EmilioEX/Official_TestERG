@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Figuras y Colores</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #8e44ad;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 60px);
+        }
+
+        /* Mitad izquierda: Cámara en tiempo real durante el quiz */
+        .camera-pane {
+            flex: 1;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 2px solid #ddd;
+            position: relative;
+        }
+
+        .camera-pane img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Mitad derecha: Pregunta del Reto y Progreso */
+        .quiz-pane {
+            flex: 1;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .quiz-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 35px;
+            width: 85%;
+            max-width: 450px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .quiz-card h2 {
+            margin-bottom: 15px;
+            color: #8e44ad;
+            font-size: 1.3rem;
+        }
+
+        .target-box {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #2c3e50;
+            text-transform: uppercase;
+            background: #eaecee;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .progress-text {
+            font-size: 1rem;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        .instruction-sub {
+            font-size: 0.95rem;
+            color: #555;
+            margin-top: 15px;
+        }
+
+        .btn-salir {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-salir:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Quiz Interactivo - ¡Muestra el objetivo correcto!</h1>
+    </header>
+
+    <div class="main-container">
+        <!-- Mitad Izquierda: Cámara -->
+        <div class="camera-pane">
+            <img src="{{ url_for('video_feed') }}" alt="Cámara del Quiz en vivo">
+        </div>
+
+        <!-- Mitad Derecha: Reto Actual -->
+        <div class="quiz-pane">
+            <div class="quiz-card">
+                <h2>Reto Actual:</h2>
+                <div class="target-box">
+                    <span id="target-figura">{{ pregunta.figura }}</span> de color <span id="target-color">{{ pregunta.color }}</span>
+                </div>
+                <p class="instruction-sub">Coloca la figura indicada frente a la cámara para avanzar automáticamente.</p>
+                <div class="progress-text">Progreso Pregunta: <span id="progreso-texto">{{ progreso }}</span></div>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn-salir">Abandonar Quiz</a>
+        </div>
+    </div>
+
+    <script>
+        // Función periódica para verificar si la cámara acertó la figura y color objetivo
+        async function verificarProgresoQuiz() {
+            try {
+                let response = await fetch('/api/verificar_respuesta', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                let data = await response.json();
+
+                if (data.resultado === "ganador" || data.siguiente === "ganador") {
+                    window.location.href = "{{ url_for('ganador') }}";
+                } else if (data.resultado === "correcto") {
+                    // Actualizar los textos de la siguiente pregunta de la bolsa
+                    document.getElementById('target-figura').innerText = data.siguiente_pregunta.figura;
+                    document.getElementById('target-color').innerText = data.siguiente_pregunta.color;
+                    // Aquí podrías actualizar el progreso si lo envías en el JSON o dejarlo dinámico
+                }
+            } catch (error) {
+                console.error("Error al verificar la respuesta del quiz:", error);
+            }
+        }
+
+        // Consultar cada 800ms para evaluar la validación visual
+        setInterval(verificarProgresoQuiz, 800);
+    </script>
+</body>
+</html>

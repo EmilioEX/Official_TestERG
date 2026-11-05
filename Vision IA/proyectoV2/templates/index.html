@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento de Figuras y Colores - Flask & OpenCV</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 60px);
+        }
+
+        /* Mitad izquierda: Cámara */
+        .camera-pane {
+            flex: 1;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-right: 2px solid #ddd;
+            position: relative;
+        }
+
+        .camera-pane img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Mitad derecha: Panel de Estado y Quiz */
+        .info-pane {
+            flex: 1;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 30px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .info-card h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.4rem;
+        }
+
+        .status-item {
+            font-size: 1.2rem;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .status-value {
+            text-transform: capitalize;
+            color: #2980b9;
+        }
+
+        .btn-quiz {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-quiz:hover {
+            background-color: #219653;
+            transform: translateY(-2px);
+        }
+
+        .btn-quiz:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Detección en Tiempo Real de Figuras Geométricas y Colores</h1>
+    </header>
+
+    <div class="main-container">
+        <!-- Mitad Izquierda: Transmisión de la Cámara (MJPEG) -->
+        <div class="camera-pane">
+            <img src="{{ url_for('video_feed') }}" alt="Transmisión de Cámara en vivo">
+        </div>
+
+        <!-- Mitad Derecha: Panel Informativo y Control de Quiz -->
+        <div class="info-pane">
+            <div class="info-card">
+                <h2>Estado Actual</h2>
+                <div class="status-item">
+                    <span class="status-label">Figura:</span>
+                    <span id="figura-detectada" class="status-value">Cargando...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Color:</span>
+                    <span id="color-detectado" class="status-value">Cargando...</span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('quiz') }}" class="btn-quiz">Iniciar Quiz 🎮</a>
+        </div>
+    </div>
+    <script>
+        // Función asíncrona para consultar el estado actual detectado por OpenCV sin recargar la página
+        async function actualizarEstado() {
+            try {
+                let response = await fetch('/api/estado_actual');
+                let data = await response.json();
+                
+                document.getElementById('figura-detectada').innerText = data.figura;
+                document.getElementById('color-detectado').innerText = data.color;
+            } catch (error) {
+                console.error("Error al obtener el estado:", error);
+            }
+        }
+        // Consultar el estado cada 500 milisegundos para mantener la interfaz sincronizada
+        setInterval(actualizarEstado, 500);
+    </script>
+</body>
+</html>
