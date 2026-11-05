@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Cálculo Multivariable</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="encabezado">
+        <span class="encabezado-eyebrow">Visualizador de terreno</span>
+        <h1>Proyecto Cálculo Multivariable</h1>
+    </header>
+
+    <!-- División para el raster-->
+    <div class="divVentana">
+        <!-- Raster-->
+        <div class="divRaster">
+            <h2>Raster</h2>
+            <div id="contenedor-raster"></div>
+        </div>
+
+        <!-- Menú-->
+        <div class="divMenu">
+            <div class="menu-encabezado">
+                <span class="menu-eyebrow">Panel de control</span>
+                <h2>Menú</h2>
+                <p class="menu-subtitulo">Configura el raster y explora el terreno</p>
+            </div>
+
+            <div class="menu-scroll">
+                <!-- Configuración general -->
+                <section class="menu-seccion">
+                    <h3 class="seccion-titulo">Configuración del raster</h3>
+
+                    <div class="campo">
+                        <label for="raster-tamanio">Tamaño</label>
+                        <input type="number" id="raster-tamanio" value="10">
+                    </div>
+
+                    <label class="switch" for="interpolacion">
+                        <input type="checkbox" id="interpolacion">
+                        <span class="switch-pista"><span class="switch-bola"></span></span>
+                        <span class="switch-texto">Activar interpolación</span>
+                    </label>
+                </section>
+
+                <!-- Tipo de terreno -->
+                <section class="menu-seccion">
+                    <h3 class="seccion-titulo">Tipo de terreno</h3>
+                    <div class="campo">
+                        <label for="tipo-terreno">Terreno</label>
+                        <select id="tipo-terreno">
+                            <option value="random" selected>Random</option>
+                            <option value="mapa1">Mapa 1 (Valle y Crestas)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Coordenadas x,y,z -->
+                <section class="menu-seccion">
+                    <h3 class="seccion-titulo">Posición y elevación</h3>
+                    <div class="grid-campos grid-tres">
+                        <div class="campo">
+                            <label for="positionX">Posición en X</label>
+                            <input type="number" id="positionX">
+                        </div>
+                        <div class="campo">
+                            <label for="positionY">Posición en Y</label>
+                            <input type="number" id="positionY">
+                        </div>
+                        <div class="campo">
+                            <label for="positionZ">Posición en Z</label>
+                            <input type="number" id="positionZ">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Acciones -->
+                <section class="menu-seccion">
+                    <h3 class="seccion-titulo">Acciones</h3>
+                    <div class="grid-botones">
+                        <button id="btn-generar" class="boton boton-primario">Generar</button>
+                        <button id="btn-degradar" class="boton">Degradar</button>
+                        <button id="btn-ordenar" class="boton">Ordenar</button>
+                        <button id="btn-parteaguas" class="boton boton-ancho">Calcular parteaguas</button>
+                    </div>
+
+                    <!-- Cuenca al hacer clic en un río -->
+                    <label class="switch" for="cuenca-por-clic">
+                        <input type="checkbox" id="cuenca-por-clic">
+                        <span class="switch-pista"><span class="switch-bola"></span></span>
+                        <span class="switch-texto">Mostrar cuenca al hacer clic en un río</span>
+                    </label>
+
+                    <!-- Min y maximo del raster -->
+                    <div class="rango-valores">
+                        <label id="maximo">Máximo: —</label>
+                        <label id="minimo">Mínimo: —</label>
+                    </div>
+                </section>
+
+                <!-- Escala de colores -->
+                <section class="menu-seccion">
+                    <h3 class="seccion-titulo">Escala de color</h3>
+                    <!-- Tarjeta de colores -->
+                    <div id="contenedor-barra"></div>
+                </section>
+
+                <!-- Buscador -->
+                <section class="menu-seccion seccion-buscador">
+                    <h3 class="seccion-titulo">Buscador de Z</h3>
+
+                    <div class="campo">
+                        <label for="selector-modo">Modo de búsqueda</label>
+                        <select id="selector-modo">
+                            <option value="exacto">Valor exacto</option>
+                            <option value="rango">Rango de valores</option>
+                        </select>
+                    </div>
+
+                    <div id="modo-exacto" class="mostrar">
+                        <div class="campo">
+                            <label for="z-exacta">Buscar valor z</label>
+                            <input type="number" id="z-exacta">
+                        </div>
+                    </div>
+
+                    <div id="modo-rango" class="mostrar ocultar">
+                        <div class="grid-campos">
+                            <div class="campo">
+                                <label for="z-min">Desde</label>
+                                <input type="number" id="z-min">
+                            </div>
+                            <div class="campo">
+                                <label for="z-max">Hasta</label>
+                                <input type="number" id="z-max">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="btn-restaurar" class="boton boton-suave boton-ancho">Eliminar búsqueda</button>
+                </section>
+                <section>
+                    <!-- Switch DEmo -->
+                    <label class="switch" for="demo">
+                        <input type="checkbox" id="demo">
+                        <span class="switch-pista"><span class="switch-bola"></span></span>
+                        <span class="switch-texto">Activar Demo</span>
+                    </label>
+                </section>
+            </div>
+        </div>
+    </div>
+    <!-- Aviso de validación -->
+    <div id="aviso-validacion" class="aviso-validacion" role="alert" aria-live="assertive" aria-atomic="true">
+        <span class="aviso-icono" aria-hidden="true">!</span>
+        <span id="aviso-texto"></span>
+        <button type="button" id="aviso-cerrar" class="aviso-cerrar" aria-label="Cerrar aviso">×</button>
+    </div>
+
+    <script src="scripts/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<head>
+    <title>Ejercicio 1</title>
+</head>
+<body>
+    <h1 id="titulo">Hola Mundo</h1>
+
+    <button id="btn-Texto">Haz clic aquí</button>
+
+    <script>
+        //biblioteca de elementos en uso
+        const btnTexto=document.getElementById("btn-Texto");
+        const titulo=document.getElementById("titulo");
+
+        let estado=0;
+
+        function main() {
+            btnTexto.addEventListener("click", cambiarTexto);
+            btnTexto.addEventListener("keydown", focoAbajo);
+            btnTexto.addEventListener("keyup", focoArriba);
+            btnTexto.addEventListener("focus", foco);
+            btnTexto.addEventListener("mouseenter", mouseEnter);
+            btnTexto.addEventListener("mouseleave", mouseLeave);
+        }
+        function cambiarTexto(){
+            if(estado==0){
+                titulo.textContent = `(Estado ${estado}) Hola`;
+                estado++;
+            }else if(estado==1){
+                titulo.textContent = `(Estado ${estado}) Mundo`;
+                estado++;
+            }else if(estado==2){
+                titulo.textContent = `(Estado ${estado}) Gracias`;
+                estado=0;
+            }
+            return;
+        }
+        function foco(){
+            titulo.textContent=`foco en el botón`;
+        }
+        function focoAbajo(){
+            titulo.textContent=`presionaste una tecla abajo (keydown) cuando tenia el foco`;
+        }
+        function focoArriba(){
+            titulo.textContent=`dejaste de presionar la tecla (keyup) cuando tenia el foco`;
+        }
+        function mouseEnter(){
+            titulo.textContent=`entro el ratón`;
+        }
+        function mouseLeave(){
+            titulo.textContent=`salió el ratón`;
+        }
+        main();
+    </script>
+</body>
+</html>

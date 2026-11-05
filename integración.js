@@ -13,7 +13,6 @@ const listaPedidos={};
 const readline = require("readline");
 
 /**********************/
-
 async function main() {
     let SuperMenu;
     do {
@@ -119,7 +118,8 @@ async function main() {
                                     console.log("=====ERROR: Código inválido=====");
                                 }
                             } while (nuevoProd<1 || nuevoProd>productos.length);
-                            agregarPedido(listaPedidos[nombreRealPedido], productos[nuevoProd-1].producto, productos[nuevoProd-1].precio);
+                            agregarPedido(listaPedidos[nombreRealPedido], productos[nuevoProd-1].producto,
+                                             productos[nuevoProd-1].precio);
                             console.log("\nProducto agregado correctamente.");
                         }
                         if (opcionEdicion==2) {
@@ -178,8 +178,8 @@ function superMenu(){
     console.log("\t3.- Ver Pedidos");
     console.log("\t0.- Salir del sistema");
 }
-//Función que permite esperar al usuario para que conteste la "pregunta" 
-//o solicitud que se le ingresa a través del parámetro texto
+/*Función que permite esperar al usuario para que conteste la "pregunta" 
+o solicitud que se le ingresa a través del parámetro texto*/
 function pregunta(texto) {
     const rl = readline.createInterface({
         input: process.stdin,

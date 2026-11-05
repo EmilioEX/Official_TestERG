@@ -23,9 +23,15 @@ const inputzMin=document.getElementById('z-min');
 const inputzMax=document.getElementById('z-max');
 
 const interpolacion=document.getElementById('interpolacion');
+//Casilla: al hacer clic en un río se muestra la cuenca de ese punto (desactivada por defecto)
+const cuencaPorClic=document.getElementById('cuenca-por-clic');
 
 const btnParteaguas = document.getElementById('btn-parteaguas');
 const tipoTerreno = document.getElementById('tipo-terreno');
+
+//Ríos en el modo Random: pon true para verlos o false para ocultarlos.
+//En el Mapa 1 los ríos siempre se muestran (opción predefinida).
+const MOSTRAR_RIOS_EN_RANDOM = false;
 
 //Celdas seleccionadas
 let celdaSeleccionada= null;
@@ -49,8 +55,9 @@ function main(){
         const celdaClick=evento.target;
 
         if(!celdaClick.classList.contains('celda')) return;
-        // --- LLAMADA SIATL AL HACER CLIC EN UN RÍO ---
-        if (celdaClick.dataset.esRio === "true") {
+        // --- CUENCA DEL PUNTO (solo si la casilla está activada) ---
+        // Con la casilla desactivada, un río se selecciona como cualquier otra celda
+        if (cuencaPorClic.checked && celdaClick.dataset.esRio === "true") {
             delimitarCuencaDesdeRio(celdaClick);
             return;
         }
@@ -181,6 +188,11 @@ function main(){
     inputzMin.addEventListener('change',buscarCeldas);
     inputzMax.addEventListener('change',buscarCeldas);
     btnParteaguas.addEventListener('click', detectarYMostrarParteaguas);
+    //Al desactivar la casilla quitamos solo la cuenca amarilla (la morada del botón se conserva)
+    cuencaPorClic.addEventListener('change', () => {
+        if (cuencaPorClic.checked) return;
+        for (const c of raster.children) c.classList.remove('parteaguas-amarillo', 'celda-cuenca');
+    });
     tipoTerreno.addEventListener('change', generarRaster); // Para que cambie al mover
     buscarCeldas();
 }
@@ -248,7 +260,7 @@ function generarRaster(){
         let minVal = Infinity;
         let maxVal = -Infinity;
 
-        // 1. Generar el relieve del Mapa 1
+        // 1. Relieve del Mapa 1 (sin cambios)
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
                 let x = (j / (size - 1)) * 1000;
@@ -265,55 +277,14 @@ function generarRaster(){
             }
         }
 
-        // 2. Calcular flujo D8 y acumulación real para encontrar el cauce por donde corre el agua
-        let vecinos = [[-1,-1], [-1,0], [-1,1], [0,-1], [0,1], [1,-1], [1,0], [1,1]];
-        let recep = Array(size).fill(0).map(() => Array(size).fill(null));
-
-        for (let i = 0; i < size; i++) {
-            for (let j = 0; j < size; j++) {
-                let minZ = matrizRaw[i][j];
-                let mejorDest = null;
-                for (let [di, dj] of vecinos) {
-                    let ni = i + di, nj = j + dj;
-                    if (ni >= 0 && ni < size && nj >= 0 && nj < size) {
-                        if (matrizRaw[ni][nj] < minZ) {
-                            minZ = matrizRaw[ni][nj];
-                            mejorDest = [ni, nj];
-                        }
-                    }
-                }
-                recep[i][j] = mejorDest;
-            }
-        }
-
-        // Calcular acumulación de flujo (cuántas celdas drenan a través de cada nodo)
-        let orden = [];
-        for (let i = 0; i < size; i++) {
-            for (let j = 0; j < size; j++) {
-                orden.push({i, j, z: matrizRaw[i][j]});
-            }
-        }
-        orden.sort((a, b) => b.z - a.z); // Del más alto al más bajo
-
-        let acc = Array(size).fill(0).map(() => Array(size).fill(1));
-        for (let nodo of orden) {
-            let r = recep[nodo.i][nodo.j];
-            if (r) {
-                acc[r[0]][r[1]] += acc[nodo.i][nodo.j];
-            }
-        }
-
-        // Umbral para definir qué celdas forman el río (las que tienen mayor acumulación en el valle)
-        let umbralRio = Math.floor(size * 1.5);
-
-        // 3. Renderizar el ráster y marcar automáticamente el río real en rojo
+        // 2. Renderizar (guardando la z con decimales en data-z-real)
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
                 const cuadro = document.createElement('div');
                 cuadro.classList.add('celda');
 
-                let zCrudo = matrizRaw[i][j];
-                let numero = Math.round(((zCrudo - minVal) / (maxVal - minVal)) * 99) + 1;
+                let zEscalada = ((matrizRaw[i][j] - minVal) / (maxVal - minVal)) * 99 + 1;
+                let numero = Math.round(zEscalada);
                 let color = numeroAColor(numero, interpolacion.checked);
 
                 cuadro.style.backgroundColor = color;
@@ -322,13 +293,7 @@ function generarRaster(){
                 cuadro.dataset.x = j;
                 cuadro.dataset.y = i;
                 cuadro.dataset.z = numero;
-
-                // Si la acumulación supera el umbral y está en la zona central del valle, es parte del río natural
-                let enValleCentral = (j >= Math.floor(size * 0.4) && j <= Math.floor(size * 0.6));
-                if (acc[i][j] >= umbralRio && enValleCentral) {
-                    cuadro.classList.add('cauce-rojo');
-                    cuadro.dataset.esRio = "true";
-                }
+                cuadro.dataset.zReal = zEscalada;
 
                 shard.appendChild(cuadro);
             }
@@ -357,6 +322,7 @@ function generarRaster(){
     }
 
     raster.appendChild(shard);
+    hid_marcarRios(); // decide internamente si se dibujan los ríos (ver MOSTRAR_RIOS_EN_RANDOM)
     calcularExtremos();
     buscarCeldas();
 }
@@ -366,97 +332,16 @@ function delimitarCuencaDesdeRio(celdaClick) {
         return;
     }
 
-    let size = parseInt(tamanio.value);
-    const celdas = raster.querySelectorAll('.celda');
+    const n = hid_tamanio();
+    if (!hidRecep || hidN !== n) hid_calcular();
 
-    // 1. Limpiar selecciones de cuenca anteriores
-    celdas.forEach(c => {
-        c.classList.remove('parteaguas-amarillo');
-        c.classList.remove('celda-cuenca');
-    });
+    const idx = parseInt(celdaClick.dataset.y) * n + parseInt(celdaClick.dataset.x);
 
-    // 2. Reconstruir la matriz Z de elevaciones
-    let Z = Array(size).fill(0).map(() => Array(size).fill(0));
-    celdas.forEach(c => {
-        Z[parseInt(c.dataset.y)][parseInt(c.dataset.x)] = parseInt(c.dataset.z);
-    });
+    hid_limpiarCuenca();
+    const cuenca = hid_cuencaDesde(idx);              // todo lo que drena hasta esta celda
+    const total = hid_pintarCuenca(cuenca, 'parteaguas-amarillo', 'celda-cuenca');
 
-    // 3. Obtener todas las celdas catalogadas como río
-    let celdasRio = [];
-    celdas.forEach(c => {
-        if (c.dataset.esRio === "true") {
-            celdasRio.push({ x: parseInt(c.dataset.x), y: parseInt(c.dataset.y) });
-        }
-    });
-
-    // 4. Proceso por cada celda de río (barrido horizontal izq y der)
-    celdasRio.forEach(rio => {
-        let rx = rio.x;
-        let ry = rio.y;
-
-        // --- HACIA LA IZQUIERDA ---
-        let maxZIzq = Z[ry][rx];
-        let mejorXIzq = rx;
-        
-        for (let x = rx; x >= 0; x--) {
-            let zVal = Z[ry][x];
-            
-            // Pintar el interior de la cuenca (siempre que no sea el río)
-            let celdaDom = raster.querySelector(`[data-x="${x}"][data-y="${ry}"]`);
-            if (celdaDom && !celdaDom.classList.contains('cauce-rojo')) {
-                celdaDom.classList.add('celda-cuenca');
-            }
-
-            // Buscar el punto máximo (cresta/parteaguas)
-            if (zVal >= maxZIzq) {
-                maxZIzq = zVal;
-                mejorXIzq = x;
-            } else {
-                // Si la altura comienza a descender después del pico, encontramos la cresta
-                break;
-            }
-        }
-
-        // Marcar el parteaguas izquierdo
-        let celdaParteaguasIzq = raster.querySelector(`[data-x="${mejorXIzq}"][data-y="${ry}"]`);
-        if (celdaParteaguasIzq) {
-            celdaParteaguasIzq.classList.remove('celda-cuenca');
-            celdaParteaguasIzq.classList.add('parteaguas-amarillo');
-        }
-
-
-        // --- HACIA LA DERECHA ---
-        let maxZDer = Z[ry][rx];
-        let mejorXDer = rx;
-
-        for (let x = rx; x < size; x++) {
-            let zVal = Z[ry][x];
-            
-            // Pintar el interior de la cuenca (siempre que no sea el río)
-            let celdaDom = raster.querySelector(`[data-x="${x}"][data-y="${ry}"]`);
-            if (celdaDom && !celdaDom.classList.contains('cauce-rojo')) {
-                celdaDom.classList.add('celda-cuenca');
-            }
-
-            // Buscar el punto máximo (cresta/parteaguas)
-            if (zVal >= maxZDer) {
-                maxZDer = zVal;
-                mejorXDer = x;
-            } else {
-                // Si la altura comienza a descender después del pico, encontramos la cresta
-                break;
-            }
-        }
-
-        // Marcar el parteaguas derecho
-        let celdaParteaguasDer = raster.querySelector(`[data-x="${mejorXDer}"][data-y="${ry}"]`);
-        if (celdaParteaguasDer) {
-            celdaParteaguasDer.classList.remove('celda-cuenca');
-            celdaParteaguasDer.classList.add('parteaguas-amarillo');
-        }
-    });
-
-    console.log("Cuenca y parteaguas delimitados por barrido horizontal por cada celda de río.");
+    console.log(`Cuenca aportante: ${total} celdas (${(100 * total / (n*n)).toFixed(1)} % del ráster).`);
 }
 function generarBarra(){
     const colores = [
@@ -777,74 +662,209 @@ function traductorHex(hexa){
 
 
 function detectarYMostrarParteaguas() {
-    const celdas = raster.querySelectorAll('.celda');
-    if (celdas.length === 0) return;
+    if (raster.children.length === 0) return;
 
-    let size = parseInt(tamanio.value);
-    
-    // 1. Reconstruir la matriz Z de 2D a partir del DOM actual
-    let Z = Array(size).fill(0).map(() => Array(size).fill(0));
-    celdas.forEach(celda => {
-        let x = parseInt(celda.dataset.x);
-        let y = parseInt(celda.dataset.y);
-        Z[y][x] = parseInt(celda.dataset.z);
-    });
+    hid_marcarRios(); // recalcula flujo y ríos con las alturas actuales
+    const n = hidN;
 
-    // Limpiar marcas anteriores de parteaguas si las hubiera
-    celdas.forEach(celda => celda.classList.remove('parteaguas'));
-
-    // 2. Calcular el Laplaciano discreto (∇²z = z_xx + z_yy) para toda la matriz interna
-    let matrizLaplaciano = Array(size).fill(0).map(() => Array(size).fill(0));
-
-    for (let i = 1; i < size - 1; i++) {
-        for (let j = 1; j < size - 1; j++) {
-            let z_xx = Z[i][j+1] - 2 * Z[i][j] + Z[i][j-1];
-            let z_yy = Z[i+1][j] - 2 * Z[i][j] + Z[i-1][j];
-            matrizLaplaciano[i][j] = z_xx + z_yy;
+    // Salida: celda de borde con mayor acumulación
+    let idxSalida = 0, mejorAcc = -1;
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            if (i === 0 || j === 0 || i === n-1 || j === n-1) {
+                const k = i*n + j;
+                if (hidAcc[k] > mejorAcc) { mejorAcc = hidAcc[k]; idxSalida = k; }
+            }
         }
     }
 
-    // 3. Forzar una línea continua: por cada fila horizontal (i), 
-    // encontramos el punto exacto de mayor cresta (mínimo Laplaciano) a la izquierda y a la derecha.
-    for (let i = 2; i < size - 2; i++) {
-        let minLapIzq = 0;
-        let mejorXIzq = -1;
+    const cuenca = hid_cuencaDesde(idxSalida);
+    const total = hid_pintarCuenca(cuenca, 'parteaguas', 'celda-cuenca-morada'); // contorno + superficie en morado
 
-        let minLapDer = 0;
-        let mejorXDer = -1;
-
-        // Rango de búsqueda para el flanco izquierdo (evitando el valle central)
-        for (let j = Math.floor(size * 0.1); j < Math.floor(size * 0.38); j++) {
-            if (matrizLaplaciano[i][j] < minLapIzq && matrizLaplaciano[i][j] < 0) {
-                minLapIzq = matrizLaplaciano[i][j];
-                mejorXIzq = j;
-            }
-        }
-
-        // Rango de búsqueda para el flanco derecho (evitando el valle central)
-        for (let j = Math.floor(size * 0.62); j < Math.floor(size * 0.9); j++) {
-            if (matrizLaplaciano[i][j] < minLapDer && matrizLaplaciano[i][j] < 0) {
-                minLapDer = matrizLaplaciano[i][j];
-                mejorXDer = j;
-            }
-        }
-
-        // Marcar la celda de la izquierda para esta fila si cumple
-        if (mejorXIzq !== -1) {
-            let celdaIzq = raster.querySelector(`[data-x="${mejorXIzq}"][data-y="${i}"]`);
-            if (celdaIzq) celdaIzq.classList.add('parteaguas');
-        }
-
-        // Marcar la celda de la derecha para esta fila si cumple
-        if (mejorXDer !== -1) {
-            let celdaDer = raster.querySelector(`[data-x="${mejorXDer}"][data-y="${i}"]`);
-            if (celdaDer) celdaDer.classList.add('parteaguas');
-        }
-    }
-
-    console.log("Líneas de parteaguas continuas generadas con éxito.");
+    console.log(`Parteaguas de la cuenca principal: ${total} celdas, salida en fila ${(idxSalida / n) | 0}, columna ${idxSalida % n}.`);
 }
 
+
+
+
+
+
+
+
+
+
+// ===================== HIDROLOGÍA (ríos y cuenca) =====================
+const HID_FRACCION_UMBRAL = 0.01; // fracción de celdas que define un río (guía: U = 100 de 10,000)
+let hidN = 0, hidRecep = null, hidAcc = null, hidUmbral = 0;
+const HID_VECINOS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+// Lado del ráster que realmente está dibujado
+function hid_tamanio(){ return Math.round(Math.sqrt(raster.children.length)); }
+
+// Lee las alturas del DOM (usa data-z-real si sigue vigente; si no, data-z)
+function hid_leerZ(n){
+    const Z = new Float64Array(n*n);
+    for (let k = 0; k < n*n; k++) {
+        const c = raster.children[k];
+        const zInt = parseInt(c.dataset.z);
+        const zReal = parseFloat(c.dataset.zReal);
+        Z[k] = (!isNaN(zReal) && Math.round(zReal) === zInt) ? zReal : zInt;
+    }
+    return Z;
+}
+
+// Rellena depresiones (priority-flood) para que el agua siempre tenga salida
+function hid_rellenar(Z, n){
+    const eps = 1e-5;
+    const F = new Float64Array(n*n).fill(Infinity);
+    const visto = new Uint8Array(n*n);
+    const hk = [], hv = []; // montículo mínimo: claves (z) y valores (índice)
+    function push(k, v){
+        let i = hk.length; hk.push(k); hv.push(v);
+        while (i > 0) {
+            const p = (i - 1) >> 1;
+            if (hk[p] <= k) break;
+            hk[i] = hk[p]; hv[i] = hv[p]; i = p;
+        }
+        hk[i] = k; hv[i] = v;
+    }
+    function pop(){
+        const k0 = hk[0], v0 = hv[0];
+        const kl = hk.pop(), vl = hv.pop();
+        const len = hk.length;
+        if (len > 0) {
+            let i = 0;
+            while (true) {
+                const l = 2*i + 1;
+                if (l >= len) break;
+                const r = l + 1;
+                const m = (r < len && hk[r] < hk[l]) ? r : l;
+                if (hk[m] >= kl) break;
+                hk[i] = hk[m]; hv[i] = hv[m]; i = m;
+            }
+            hk[i] = kl; hv[i] = vl;
+        }
+        return [k0, v0];
+    }
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            if (i === 0 || j === 0 || i === n-1 || j === n-1) {
+                const k = i*n + j;
+                F[k] = Z[k]; visto[k] = 1; push(Z[k], k);
+            }
+        }
+    }
+    while (hk.length) {
+        const [z, c] = pop();
+        const i = (c / n) | 0, j = c % n;
+        for (const [di, dj] of HID_VECINOS) {
+            const a = i + di, b = j + dj;
+            if (a < 0 || a >= n || b < 0 || b >= n) continue;
+            const k = a*n + b;
+            if (visto[k]) continue;
+            visto[k] = 1;
+            F[k] = Math.max(Z[k], z + eps);
+            push(F[k], k);
+        }
+    }
+    return F;
+}
+
+// Relleno + dirección de flujo D8 (pendiente normalizada por distancia) + acumulación
+function hid_calcular(){
+    const n = hid_tamanio();
+    const Z = hid_leerZ(n);
+    const F = hid_rellenar(Z, n);
+    const recep = new Int32Array(n*n).fill(-1);
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            let mejor = 0;
+            const c = i*n + j;
+            for (const [di, dj] of HID_VECINOS) {
+                const a = i + di, b = j + dj;
+                if (a < 0 || a >= n || b < 0 || b >= n) continue;
+                const s = (F[c] - F[a*n + b]) / Math.hypot(di, dj);
+                if (s > mejor) { mejor = s; recep[c] = a*n + b; }
+            }
+        }
+    }
+    const orden = Array.from({length: n*n}, (_, k) => k).sort((p, q) => F[q] - F[p]);
+    const acc = new Int32Array(n*n).fill(1);
+    for (const k of orden) {          // de la más alta a la más baja
+        const r = recep[k];
+        if (r >= 0) acc[r] += acc[k];
+    }
+    hidN = n; hidRecep = recep; hidAcc = acc;
+    hidUmbral = Math.max(4, Math.round(HID_FRACCION_UMBRAL * n * n));
+}
+
+// Quita todas las marcas de cuenca/parteaguas
+function hid_limpiarCuenca(){
+    for (const c of raster.children) c.classList.remove('parteaguas', 'celda-cuenca-morada', 'parteaguas-amarillo', 'celda-cuenca');
+}
+
+// ¿Se deben dibujar los ríos con el terreno actual?
+function hid_riosVisibles(){
+    return tipoTerreno.value === 'mapa1' || MOSTRAR_RIOS_EN_RANDOM;
+}
+
+// Calcula el flujo y marca los ríos (acc >= umbral) si corresponde mostrarlos.
+// El flujo se calcula siempre, porque el parteaguas lo necesita aunque no se vean los ríos.
+function hid_marcarRios(){
+    if (raster.children.length === 0) return;
+    hid_calcular();
+    hid_limpiarCuenca();
+    const visibles = hid_riosVisibles();
+    for (let k = 0; k < hidN*hidN; k++) {
+        const c = raster.children[k];
+        if (visibles && hidAcc[k] >= hidUmbral) {
+            c.classList.add('cauce-rojo');
+            c.dataset.esRio = "true";
+        } else {
+            c.classList.remove('cauce-rojo');
+            delete c.dataset.esRio;
+        }
+    }
+}
+
+// Cuenca aportante: todas las celdas cuyo flujo termina en la celda idx
+function hid_cuencaDesde(idx){
+    const n = hidN;
+    const cuenca = new Uint8Array(n*n);
+    const pila = [idx];
+    cuenca[idx] = 1;
+    while (pila.length) {
+        const c = pila.pop();
+        const i = (c / n) | 0, j = c % n;
+        for (const [di, dj] of HID_VECINOS) {
+            const a = i + di, b = j + dj;
+            if (a < 0 || a >= n || b < 0 || b >= n) continue;
+            const k = a*n + b;
+            if (!cuenca[k] && hidRecep[k] === c) { cuenca[k] = 1; pila.push(k); }
+        }
+    }
+    return cuenca;
+}
+
+// Pinta el contorno (parteaguas) y, opcionalmente, el interior. Devuelve el nº de celdas
+function hid_pintarCuenca(cuenca, claseBorde, claseInterior){
+    const n = hidN;
+    const cuatro = [[-1,0],[1,0],[0,-1],[0,1]];
+    let total = 0;
+    for (let k = 0; k < n*n; k++) {
+        if (!cuenca[k]) continue;
+        total++;
+        const i = (k / n) | 0, j = k % n;
+        const esBorde = cuatro.some(([di, dj]) => {
+            const a = i + di, b = j + dj;
+            return a < 0 || a >= n || b < 0 || b >= n || !cuenca[a*n + b];
+        });
+        const c = raster.children[k];
+        if (esBorde) c.classList.add(claseBorde);
+        else if (claseInterior && !c.classList.contains('cauce-rojo')) c.classList.add(claseInterior);
+    }
+    return total;
+}
 
 main();
 generarRaster();
